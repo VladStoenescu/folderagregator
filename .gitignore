@@ -29,7 +29,7 @@ env/
 # Excel files
 *.xlsx
 *.xls
-!example_*.xlsx
+!example_questionnaire.xlsx
 
 # IDE
 .vscode/
