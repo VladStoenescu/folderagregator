@@ -1,8 +1,9 @@
 """
-SharePoint Questionnaire Aggregator
+Folder Aggregator
 
-This tool connects to SharePoint, navigates through folders in a specified location,
-downloads Excel questionnaires, and aggregates the data into a single Excel file.
+This tool navigates through folders in the same location as the script,
+processes Excel questionnaires, and aggregates the data into a single Excel file.
+It supports both local filesystem and SharePoint modes.
 """
 
 import os
@@ -11,11 +12,64 @@ import tempfile
 from pathlib import Path
 from typing import List, Dict, Any
 from dotenv import load_dotenv
-from office365.runtime.auth.authentication_context import AuthenticationContext
-from office365.sharepoint.client_context import ClientContext
-from office365.sharepoint.files.file import File
 import openpyxl
 import pandas as pd
+
+# Optional SharePoint imports
+try:
+    from office365.runtime.auth.authentication_context import AuthenticationContext
+    from office365.sharepoint.client_context import ClientContext
+    from office365.sharepoint.files.file import File
+    SHAREPOINT_AVAILABLE = True
+except ImportError:
+    SHAREPOINT_AVAILABLE = False
+
+
+class LocalFolderProcessor:
+    """Handles local filesystem operations for folder and file scanning."""
+    
+    def __init__(self, base_path: str):
+        """
+        Initialize local folder processor.
+        
+        Args:
+            base_path: Base directory path to scan for folders
+        """
+        self.base_path = Path(base_path).resolve()
+        
+    def get_folders(self) -> List[Path]:
+        """
+        Get all folders in the base path.
+        
+        Returns:
+            List of folder paths
+        """
+        try:
+            folders = [f for f in self.base_path.iterdir() if f.is_dir() and not f.name.startswith('.')]
+            return folders
+        except Exception as e:
+            print(f"Error getting folders from {self.base_path}: {e}")
+            return []
+    
+    def get_excel_files_in_folder(self, folder_path: Path) -> List[Path]:
+        """
+        Get all Excel files in a folder.
+        
+        Args:
+            folder_path: Path to the folder
+            
+        Returns:
+            List of Excel file paths
+        """
+        try:
+            excel_files = []
+            for file in folder_path.iterdir():
+                if file.is_file() and file.suffix.lower() in ['.xlsx', '.xls'] and not file.name.startswith('~$'):
+                    excel_files.append(file)
+            return excel_files
+        except Exception as e:
+            print(f"Error getting files from {folder_path}: {e}")
+            return []
 
 
 class SharePointConnector:
@@ -229,78 +283,143 @@ class DataAggregator:
 
 
 def main():
-    """Main function to orchestrate the SharePoint questionnaire aggregation."""
+    """Main function to orchestrate the questionnaire aggregation."""
     # Load environment variables
     load_dotenv()
     
     # Get configuration from environment
-    site_url = os.getenv('SHAREPOINT_SITE_URL')
-    username = os.getenv('SHAREPOINT_USERNAME')
-    password = os.getenv('SHAREPOINT_PASSWORD')
-    folder_path = os.getenv('QUESTIONNAIRE_FOLDER_PATH')
+    mode = os.getenv('MODE', 'local').lower()
     output_file = os.getenv('OUTPUT_FILE', 'aggregated_questionnaires.xlsx')
     
-    # Validate configuration
-    if not all([site_url, username, password, folder_path]):
-        print("Error: Missing required configuration. Please check your .env file.")
-        print("Required variables: SHAREPOINT_SITE_URL, SHAREPOINT_USERNAME, SHAREPOINT_PASSWORD, QUESTIONNAIRE_FOLDER_PATH")
-        sys.exit(1)
-    
-    print("SharePoint Questionnaire Aggregator")
+    print("Questionnaire Aggregator")
     print("=" * 50)
     
-    # Connect to SharePoint
-    connector = SharePointConnector(site_url, username, password)
-    if not connector.connect():
-        print("Failed to connect to SharePoint")
-        sys.exit(1)
-    
-    # Initialize aggregator
-    aggregator = DataAggregator()
-    
-    # Create temporary directory for downloads
-    with tempfile.TemporaryDirectory() as temp_dir:
-        print(f"\nScanning folder: {folder_path}")
+    if mode == 'local':
+        # Local filesystem mode
+        print("Mode: Local Filesystem")
         
-        # Get all folders in the questionnaire path
-        folders = connector.get_folders_in_path(folder_path)
+        # Get the script's directory
+        script_dir = Path(__file__).parent.resolve()
+        base_path = os.getenv('BASE_PATH', str(script_dir))
+        base_path = Path(base_path).resolve()
+        
+        print(f"Scanning folders in: {base_path}")
+        
+        # Initialize local processor
+        processor = LocalFolderProcessor(base_path)
+        
+        # Initialize aggregator
+        aggregator = DataAggregator()
+        
+        # Get all folders in the base path
+        folders = processor.get_folders()
         print(f"Found {len(folders)} folders")
         
         # Process each folder
         for folder in folders:
-            folder_name = folder.properties.get('Name', '')
-            folder_url = folder.properties.get('ServerRelativeUrl', '')
+            folder_name = folder.name
             
             print(f"\nProcessing folder: {folder_name}")
             
             # Get Excel files in this folder
-            excel_files = connector.get_excel_files_in_folder(folder_url)
+            excel_files = processor.get_excel_files_in_folder(folder)
             print(f"  Found {len(excel_files)} Excel file(s)")
             
-            # Download and process each Excel file
+            # Process each Excel file
             for excel_file in excel_files:
-                file_name = excel_file.properties.get('Name', '')
-                file_url = excel_file.properties.get('ServerRelativeUrl', '')
+                file_name = excel_file.name
                 
                 print(f"    Processing: {file_name}")
                 
-                # Download file
-                local_path = os.path.join(temp_dir, file_name)
-                if connector.download_file(file_url, local_path):
-                    # Extract data
-                    data = QuestionnaireExtractor.extract_data(local_path, folder_name)
-                    if data:
-                        aggregator.add_questionnaire(data)
-                        print(f"      Extracted data from {file_name}")
-                    else:
-                        print(f"      Failed to extract data from {file_name}")
+                # Extract data
+                data = QuestionnaireExtractor.extract_data(str(excel_file), folder_name)
+                if data:
+                    aggregator.add_questionnaire(data)
+                    print(f"      Extracted data from {file_name}")
                 else:
-                    print(f"      Failed to download {file_name}")
+                    print(f"      Failed to extract data from {file_name}")
+        
+        # Export aggregated data
+        print("\n" + "=" * 50)
+        aggregator.export_to_excel(output_file)
+        print(f"\nProcessing complete! Total questionnaires processed: {len(aggregator.all_data)}")
+        
+    elif mode == 'sharepoint':
+        # SharePoint mode
+        if not SHAREPOINT_AVAILABLE:
+            print("Error: SharePoint mode requires Office365-REST-Python-Client package")
+            print("Install it with: pip install Office365-REST-Python-Client")
+            sys.exit(1)
+        
+        print("Mode: SharePoint")
+        
+        site_url = os.getenv('SHAREPOINT_SITE_URL')
+        username = os.getenv('SHAREPOINT_USERNAME')
+        password = os.getenv('SHAREPOINT_PASSWORD')
+        folder_path = os.getenv('QUESTIONNAIRE_FOLDER_PATH')
+        
+        # Validate configuration
+        if not all([site_url, username, password, folder_path]):
+            print("Error: Missing required configuration for SharePoint mode. Please check your .env file.")
+            print("Required variables: SHAREPOINT_SITE_URL, SHAREPOINT_USERNAME, SHAREPOINT_PASSWORD, QUESTIONNAIRE_FOLDER_PATH")
+            sys.exit(1)
+        
+        # Connect to SharePoint
+        connector = SharePointConnector(site_url, username, password)
+        if not connector.connect():
+            print("Failed to connect to SharePoint")
+            sys.exit(1)
+        
+        # Initialize aggregator
+        aggregator = DataAggregator()
+        
+        # Create temporary directory for downloads
+        with tempfile.TemporaryDirectory() as temp_dir:
+            print(f"\nScanning folder: {folder_path}")
+            
+            # Get all folders in the questionnaire path
+            folders = connector.get_folders_in_path(folder_path)
+            print(f"Found {len(folders)} folders")
+            
+            # Process each folder
+            for folder in folders:
+                folder_name = folder.properties.get('Name', '')
+                folder_url = folder.properties.get('ServerRelativeUrl', '')
+                
+                print(f"\nProcessing folder: {folder_name}")
+                
+                # Get Excel files in this folder
+                excel_files = connector.get_excel_files_in_folder(folder_url)
+                print(f"  Found {len(excel_files)} Excel file(s)")
+                
+                # Download and process each Excel file
+                for excel_file in excel_files:
+                    file_name = excel_file.properties.get('Name', '')
+                    file_url = excel_file.properties.get('ServerRelativeUrl', '')
+                    
+                    print(f"    Processing: {file_name}")
+                    
+                    # Download file
+                    local_path = os.path.join(temp_dir, file_name)
+                    if connector.download_file(file_url, local_path):
+                        # Extract data
+                        data = QuestionnaireExtractor.extract_data(local_path, folder_name)
+                        if data:
+                            aggregator.add_questionnaire(data)
+                            print(f"      Extracted data from {file_name}")
+                        else:
+                            print(f"      Failed to extract data from {file_name}")
+                    else:
+                        print(f"      Failed to download {file_name}")
+        
+        # Export aggregated data
+        print("\n" + "=" * 50)
+        aggregator.export_to_excel(output_file)
+        print(f"\nProcessing complete! Total questionnaires processed: {len(aggregator.all_data)}")
     
-    # Export aggregated data
-    print("\n" + "=" * 50)
-    aggregator.export_to_excel(output_file)
-    print(f"\nProcessing complete! Total questionnaires processed: {len(aggregator.all_data)}")
+    else:
+        print(f"Error: Unknown mode '{mode}'. Valid modes are 'local' or 'sharepoint'")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
