@@ -11,7 +11,7 @@ A Python tool to automatically process Excel questionnaires from local folders o
   - Application name (Cell B1)
   - Responsible person (Cell C1)
   - Deputy person (Cell D1)
-  - 17 questions with answers (Rows 3-19, Columns B & C)
+  - 17 questions with answers (Rows 3-19, Columns B for questions, C & D for answers)
 - Aggregates all data into a single Excel file with organized columns
 
 ## Prerequisites
@@ -138,7 +138,8 @@ The tool expects Excel files with the following structure:
 
 - **Rows 3-19**:
   - Column B: Questions (17 questions total)
-  - Column C: Answers
+  - Column C: Primary answers
+  - Column D: Alternative answers (used if Column C is empty or contains "None")
 
 ## Output Format
 

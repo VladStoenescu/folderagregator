@@ -65,7 +65,8 @@ Ensure your questionnaire Excel files follow this structure:
 
 - **Rows 3-19** (17 questions):
   - Column B: Question text
-  - Column C: Answer
+  - Column C: Primary answer
+  - Column D: Alternative answer (used if Column C is empty or contains "None")
 
 See `example_questionnaire.xlsx` for a template.
 
