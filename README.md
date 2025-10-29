@@ -1,12 +1,12 @@
-# SharePoint Questionnaire Aggregator
+# Folder Aggregator
 
-A Python tool to automatically download Excel questionnaires from SharePoint folders and aggregate the data into a single Excel file.
+A Python tool to automatically process Excel questionnaires from local folders or SharePoint, and aggregate the data into a single Excel file.
 
 ## Features
 
-- Connects to SharePoint using Office 365 authentication
-- Navigates through all subfolders within a specified SharePoint folder
-- Downloads Excel files from each subfolder
+- **Local Mode (Default)**: Scans all folders in the current working directory (where you run the script)
+- **SharePoint Mode**: Connects to SharePoint and navigates through subfolders
+- Downloads/reads Excel files from each folder
 - Extracts questionnaire data including:
   - Application name (Cell B1)
   - Responsible person (Cell C1)
@@ -17,8 +17,7 @@ A Python tool to automatically download Excel questionnaires from SharePoint fol
 ## Prerequisites
 
 - Python 3.8 or higher
-- SharePoint Online account with appropriate permissions
-- Access to the SharePoint site and folder containing questionnaires
+- For SharePoint mode: SharePoint Online account with appropriate permissions
 
 ## Installation
 
@@ -36,10 +35,30 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-2. Edit the `.env` file with your SharePoint credentials and settings:
+2. Edit the `.env` file with your settings:
+
+### Local Mode (Default)
 
 ```env
-# SharePoint Configuration
+MODE=local
+OUTPUT_FILE=aggregated_questionnaires.xlsx
+```
+
+The script will scan all folders in the current working directory (where you run the script from).
+
+Optionally, you can specify a different base path:
+```env
+MODE=local
+BASE_PATH=/path/to/your/folders
+OUTPUT_FILE=aggregated_questionnaires.xlsx
+```
+
+### SharePoint Mode
+
+To use SharePoint mode, set `MODE=sharepoint` and provide SharePoint credentials:
+
+```env
+MODE=sharepoint
 SHAREPOINT_SITE_URL=https://yourcompany.sharepoint.com/sites/yoursite
 SHAREPOINT_USERNAME=your.email@company.com
 SHAREPOINT_PASSWORD=your_password
@@ -49,6 +68,14 @@ OUTPUT_FILE=aggregated_questionnaires.xlsx
 
 ### Configuration Parameters:
 
+**Common Parameters:**
+- **MODE**: Operating mode - `local` (default) or `sharepoint`
+- **OUTPUT_FILE**: Name of the output Excel file (optional, defaults to `aggregated_questionnaires.xlsx`)
+
+**Local Mode Parameters:**
+- **BASE_PATH**: Directory to scan for folders (optional, defaults to current working directory)
+
+**SharePoint Mode Parameters:**
 - **SHAREPOINT_SITE_URL**: Full URL to your SharePoint site
   - Example: `https://contoso.sharepoint.com/sites/HR`
   
@@ -59,8 +86,6 @@ OUTPUT_FILE=aggregated_questionnaires.xlsx
   
 - **QUESTIONNAIRE_FOLDER_PATH**: Relative path to the questionnaire folder
   - Example: `Shared Documents/questionnaire` or `Documents/questionnaire`
-  
-- **OUTPUT_FILE**: Name of the output Excel file (optional, defaults to `aggregated_questionnaires.xlsx`)
 
 ## Usage
 
@@ -69,7 +94,32 @@ Run the script:
 python sharepoint_aggregator.py
 ```
 
+### Local Mode (Default)
+
 The script will:
+1. Scan all folders in the same directory as the script
+2. Look for Excel files in each folder
+3. Extract the questionnaire data from each Excel file
+4. Create an aggregated Excel file with all data
+
+**Example folder structure:**
+```
+/your/directory/
+├── sharepoint_aggregator.py
+├── Folder1/
+│   ├── questionnaire1.xlsx
+│   └── questionnaire2.xlsx
+├── Folder2/
+│   └── questionnaire3.xlsx
+└── Folder3/
+    └── questionnaire4.xlsx
+```
+
+The script will process all Excel files in Folder1, Folder2, and Folder3.
+
+### SharePoint Mode
+
+When configured for SharePoint mode, the script will:
 1. Connect to SharePoint using your credentials
 2. Navigate to the specified questionnaire folder
 3. Scan all subfolders for Excel files
@@ -106,7 +156,21 @@ Each row represents one questionnaire from the SharePoint folders.
 
 ## Troubleshooting
 
-### Authentication Issues
+### Local Mode Issues
+
+**No folders found:**
+- Ensure there are subfolders in the current working directory
+- Check that folder names don't start with a dot (hidden folders are ignored)
+- Verify the BASE_PATH in .env if you specified a custom path
+- You can specify BASE_PATH=/absolute/path/to/folders in .env to scan a different location
+
+**No Excel files found:**
+- Ensure Excel files have `.xlsx` or `.xls` extensions
+- Temporary Excel files starting with `~$` are automatically ignored
+
+### SharePoint Mode Issues
+
+#### Authentication Issues
 
 If you encounter authentication errors:
 
@@ -119,20 +183,20 @@ If you encounter authentication errors:
    - Contact your IT administrator to enable legacy authentication for your app
    - Or use alternative authentication methods (Azure AD app registration)
 
-### Permission Issues
+#### Permission Issues
 
-Ensure your SharePoint account has:
+For SharePoint mode, ensure your account has:
 - Read access to the questionnaire folder and all subfolders
 - Ability to list folder contents
 - Ability to download files
 
-### Path Issues
+#### Path Issues
 
 - Make sure the `QUESTIONNAIRE_FOLDER_PATH` is correct
 - Try using the server-relative path format: `/sites/yoursite/Shared Documents/questionnaire`
 - Or use the simplified format: `Shared Documents/questionnaire`
 
-### Connection Issues
+#### Connection Issues
 
 - Verify the SharePoint site URL is correct
 - Check if you can access the site through a web browser
@@ -147,10 +211,10 @@ Ensure your SharePoint account has:
 
 ## Dependencies
 
-- `Office365-REST-Python-Client`: SharePoint REST API client
 - `openpyxl`: Excel file reading and writing
 - `pandas`: Data manipulation and Excel export
 - `python-dotenv`: Environment variable management
+- `Office365-REST-Python-Client`: SharePoint REST API client (optional, only needed for SharePoint mode)
 
 ## License
 

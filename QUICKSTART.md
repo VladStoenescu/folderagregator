@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-This guide will help you get started with the SharePoint Questionnaire Aggregator.
+This guide will help you get started with the Folder Aggregator.
 
 ## Step 1: Install Dependencies
 
@@ -15,8 +15,21 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-2. Edit `.env` with your details:
+2. Edit `.env` with your settings:
+
+### Local Mode (Default - Recommended)
+
 ```env
+MODE=local
+OUTPUT_FILE=aggregated_questionnaires.xlsx
+```
+
+This will scan all folders in the current directory (where you run the script from).
+
+### For SharePoint Mode
+
+```env
+MODE=sharepoint
 SHAREPOINT_SITE_URL=https://yourcompany.sharepoint.com/sites/yoursite
 SHAREPOINT_USERNAME=your.email@company.com
 SHAREPOINT_PASSWORD=your_password
@@ -24,13 +37,13 @@ QUESTIONNAIRE_FOLDER_PATH=Shared Documents/questionnaire
 OUTPUT_FILE=aggregated_questionnaires.xlsx
 ```
 
-### Finding Your SharePoint Site URL
+### Finding Your SharePoint Site URL (SharePoint Mode Only)
 
 1. Open your SharePoint site in a web browser
 2. Copy the URL up to `/sites/yoursite` (before any document paths)
 3. Example: `https://contoso.sharepoint.com/sites/HR`
 
-### Finding Your Folder Path
+### Finding Your Folder Path (SharePoint Mode Only)
 
 The folder path should be relative to the site. Common formats:
 - `Shared Documents/questionnaire`
@@ -63,6 +76,31 @@ See `example_questionnaire.xlsx` for a template.
 python sharepoint_aggregator.py
 ```
 
+### Local Mode
+
+The tool will:
+1. Scan all folders in the current working directory
+2. Find Excel files in each folder
+3. Extract and aggregate the data
+4. Create a single Excel file with all results
+
+**Example:**
+If your folder structure looks like this:
+```
+/your/directory/
+├── sharepoint_aggregator.py
+├── Department1/
+│   └── questionnaire.xlsx
+├── Department2/
+│   └── questionnaire.xlsx
+└── Department3/
+    └── questionnaire.xlsx
+```
+
+The script will process all Excel files from Department1, Department2, and Department3.
+
+### SharePoint Mode
+
 The tool will:
 1. Connect to SharePoint
 2. Scan all folders in the questionnaire directory
@@ -80,21 +118,33 @@ It will contain:
 
 ## Troubleshooting
 
-### Authentication Fails
+### Local Mode
+
+**No folders found:**
+- Make sure there are folders in the same directory as the script
+- Folders starting with `.` (hidden folders) are ignored
+
+**No Excel files found:**
+- Ensure files have `.xlsx` or `.xls` extensions
+- Files starting with `~$` (temporary Excel files) are ignored
+
+### SharePoint Mode
+
+#### Authentication Fails
 
 If you have Multi-Factor Authentication (MFA) enabled:
 1. Go to https://account.microsoft.com/security
 2. Create an app password
 3. Use the app password in your `.env` file instead of your regular password
 
-### Cannot Find Folder
+#### Cannot Find Folder
 
 Try different path formats:
 - `/sites/yoursite/Shared Documents/questionnaire`
 - `Shared Documents/questionnaire`
 - Check the exact folder name in SharePoint (case-sensitive)
 
-### Permission Denied
+#### Permission Denied
 
 Ensure your account has:
 - Read access to the SharePoint folder
