@@ -298,10 +298,13 @@ def main():
         # Local filesystem mode
         print("Mode: Local Filesystem")
         
-        # Get the script's directory
-        script_dir = Path(__file__).parent.resolve()
-        base_path = os.getenv('BASE_PATH', str(script_dir))
-        base_path = Path(base_path).resolve()
+        # Get the base path: use BASE_PATH from env, or current working directory
+        base_path = os.getenv('BASE_PATH')
+        if base_path:
+            base_path = Path(base_path).resolve()
+        else:
+            # Use current working directory (where script is run from)
+            base_path = Path.cwd()
         
         print(f"Scanning folders in: {base_path}")
         

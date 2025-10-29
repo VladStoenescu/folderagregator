@@ -4,7 +4,7 @@ A Python tool to automatically process Excel questionnaires from local folders o
 
 ## Features
 
-- **Local Mode (Default)**: Scans all folders in the same directory as the script
+- **Local Mode (Default)**: Scans all folders in the current working directory (where you run the script)
 - **SharePoint Mode**: Connects to SharePoint and navigates through subfolders
 - Downloads/reads Excel files from each folder
 - Extracts questionnaire data including:
@@ -44,7 +44,7 @@ MODE=local
 OUTPUT_FILE=aggregated_questionnaires.xlsx
 ```
 
-The script will scan all folders in the same directory as the script is located.
+The script will scan all folders in the current working directory (where you run the script from).
 
 Optionally, you can specify a different base path:
 ```env
@@ -73,7 +73,7 @@ OUTPUT_FILE=aggregated_questionnaires.xlsx
 - **OUTPUT_FILE**: Name of the output Excel file (optional, defaults to `aggregated_questionnaires.xlsx`)
 
 **Local Mode Parameters:**
-- **BASE_PATH**: Directory to scan for folders (optional, defaults to script directory)
+- **BASE_PATH**: Directory to scan for folders (optional, defaults to current working directory)
 
 **SharePoint Mode Parameters:**
 - **SHAREPOINT_SITE_URL**: Full URL to your SharePoint site
@@ -158,9 +158,10 @@ Each row represents one questionnaire from the SharePoint folders.
 ### Local Mode Issues
 
 **No folders found:**
-- Ensure there are subfolders in the same directory as the script
+- Ensure there are subfolders in the current working directory
 - Check that folder names don't start with a dot (hidden folders are ignored)
 - Verify the BASE_PATH in .env if you specified a custom path
+- You can specify BASE_PATH=/absolute/path/to/folders in .env to scan a different location
 
 **No Excel files found:**
 - Ensure Excel files have `.xlsx` or `.xls` extensions

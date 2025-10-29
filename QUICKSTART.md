@@ -17,14 +17,14 @@ cp .env.example .env
 
 2. Edit `.env` with your settings:
 
-### For Local Mode (Default - Recommended)
+### Local Mode (Default - Recommended)
 
 ```env
 MODE=local
 OUTPUT_FILE=aggregated_questionnaires.xlsx
 ```
 
-This will scan all folders in the same directory as the script.
+This will scan all folders in the current directory (where you run the script from).
 
 ### For SharePoint Mode
 
@@ -78,7 +78,7 @@ python sharepoint_aggregator.py
 ### Local Mode
 
 The tool will:
-1. Scan all folders in the script's directory
+1. Scan all folders in the current working directory
 2. Find Excel files in each folder
 3. Extract and aggregate the data
 4. Create a single Excel file with all results
