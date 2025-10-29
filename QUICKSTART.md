@@ -60,13 +60,14 @@ Ensure your questionnaire Excel files follow this structure:
 
 - **Row 1**:
   - Cell B1: Application Name
-  - Cell C1: Responsible Person
+  - Cell C1: Responsible Person (Owner)
   - Cell D1: Deputy Person
 
 - **Rows 3-19** (17 questions):
+  - Column A: Serial Number (1-17)
   - Column B: Question text
-  - Column C: Primary answer
-  - Column D: Alternative answer (used if Column C is empty or contains "None")
+  - Column C: Answer
+  - Column D: Comments (optional)
 
 See `example_questionnaire.xlsx` for a template.
 
@@ -114,7 +115,7 @@ Open the generated Excel file (default: `aggregated_questionnaires.xlsx`).
 
 It will contain:
 - One row per questionnaire
-- Columns: Source Folder, Application, Responsible, Deputy, Question 1, Answer 1, ..., Question 17, Answer 17
+- Columns: Application, Answered, App Responsible, Deputy, Q1-Q17 (answers), COMM Q1-COMM Q17 (comments)
 
 ## Troubleshooting
 

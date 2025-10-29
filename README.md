@@ -133,26 +133,26 @@ The tool expects Excel files with the following structure:
 
 - **Row 1**:
   - Cell B1: Application Name
-  - Cell C1: Responsible Person
+  - Cell C1: Responsible Person (Owner)
   - Cell D1: Deputy Person
 
 - **Rows 3-19**:
+  - Column A: Serial Number (1-17)
   - Column B: Questions (17 questions total)
-  - Column C: Primary answers
-  - Column D: Alternative answers (used if Column C is empty or contains "None")
+  - Column C: Answers
+  - Column D: Comments (optional)
 
 ## Output Format
 
 The aggregated Excel file will contain columns:
-- Source Folder
-- Application
-- Responsible
-- Deputy
-- Question 1, Answer 1
-- Question 2, Answer 2
-- ... (up to Question 17, Answer 17)
+- **Application**: The application name
+- **Answered**: The responsible person (owner)
+- **App Responsible**: The responsible person (owner, duplicated for compatibility)
+- **Deputy**: The deputy person
+- **Q1 to Q17**: Answers to questions 1 through 17
+- **COMM Q1 to COMM Q17**: Comments for questions 1 through 17
 
-Each row represents one questionnaire from the SharePoint folders.
+Each row represents one questionnaire from the folders.
 
 ## Troubleshooting
 
