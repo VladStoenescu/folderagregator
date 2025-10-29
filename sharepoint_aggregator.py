@@ -267,8 +267,8 @@ class DataAggregator:
             # Create a base row with metadata
             row = {
                 'Application': data['application'],
-                'Answered': data['responsible'],
-                'App Responsible': data['responsible'],
+                'Answered': data['responsible'],  # Owner/Responsible person
+                'App Responsible': data['responsible'],  # Duplicate for compatibility
                 'Deputy': data['deputy']
             }
             
