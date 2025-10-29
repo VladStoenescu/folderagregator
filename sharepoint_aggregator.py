@@ -206,22 +206,17 @@ class QuestionnaireExtractor:
             responsible = sheet['C1'].value
             deputy = sheet['D1'].value
             
-            # Extract questions and answers (rows 3-19, columns B, C, and D)
+            # Extract questions, answers (column C), and comments (column D) from rows 3-19
             questions_answers = []
             for row in range(3, 20):  # Rows 3 to 19 inclusive
                 question = sheet[f'B{row}'].value
-                answer_c = sheet[f'C{row}'].value
-                answer_d = sheet[f'D{row}'].value
-                
-                # Use answer from column C if available, otherwise use column D
-                # Skip if both columns have "None" or are empty
-                answer = answer_c
-                if not answer_c or str(answer_c).strip().lower() == 'none':
-                    answer = answer_d if answer_d and str(answer_d).strip().lower() != 'none' else answer_c
+                answer = sheet[f'C{row}'].value
+                comment = sheet[f'D{row}'].value
                 
                 questions_answers.append({
                     'question': question,
-                    'answer': answer
+                    'answer': answer,
+                    'comment': comment
                 })
             
             workbook.close()
@@ -271,16 +266,19 @@ class DataAggregator:
         for data in self.all_data:
             # Create a base row with metadata
             row = {
-                'Source Folder': data['source_folder'],
                 'Application': data['application'],
-                'Responsible': data['responsible'],
+                'Answered': data['responsible'],  # Owner/Responsible person
+                'App Responsible': data['responsible'],  # Duplicate for compatibility
                 'Deputy': data['deputy']
             }
             
-            # Add questions and answers
+            # Add answers (Q1-Q17)
             for i, qa in enumerate(data['questions_answers'], start=1):
-                row[f'Question {i}'] = qa['question']
-                row[f'Answer {i}'] = qa['answer']
+                row[f'Q{i}'] = qa['answer']
+            
+            # Add comments (COMM Q1-COMM Q17)
+            for i, qa in enumerate(data['questions_answers'], start=1):
+                row[f'COMM Q{i}'] = qa['comment']
             
             rows.append(row)
         
@@ -300,21 +298,6 @@ def main():
     output_file = os.getenv('OUTPUT_FILE', 'aggregated_questionnaires.xlsx')
     
     print("Questionnaire Aggregator")
-    # Validate configuration
-    if not all([site_url, username, password, folder_path]):
-        print("Error: Missing required configuration.")
-        print("\nPlease ensure you have a .env file in the current directory.")
-        print("If you don't have a .env file, create one by copying .env.example:")
-        print("  cp .env.example .env")
-        print("\nThen edit the .env file with your SharePoint credentials.")
-        print("\nRequired variables:")
-        print(f"  SHAREPOINT_SITE_URL: {'✓ Found' if site_url else '✗ Missing'}")
-        print(f"  SHAREPOINT_USERNAME: {'✓ Found' if username else '✗ Missing'}")
-        print(f"  SHAREPOINT_PASSWORD: {'✓ Found' if password else '✗ Missing'}")
-        print(f"  QUESTIONNAIRE_FOLDER_PATH: {'✓ Found' if folder_path else '✗ Missing'}")
-        sys.exit(1)
-    
-    print("SharePoint Questionnaire Aggregator")
     print("=" * 50)
     
     if mode == 'local':
