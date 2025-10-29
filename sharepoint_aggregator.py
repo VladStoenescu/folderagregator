@@ -10,7 +10,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from dotenv import load_dotenv
 import openpyxl
 import pandas as pd
@@ -28,7 +28,7 @@ except ImportError:
 class LocalFolderProcessor:
     """Handles local filesystem operations for folder and file scanning."""
     
-    def __init__(self, base_path: str):
+    def __init__(self, base_path: Union[str, Path]):
         """
         Initialize local folder processor.
         
@@ -284,7 +284,7 @@ class DataAggregator:
 
 def main():
     """Main function to orchestrate the questionnaire aggregation."""
-    # Load environment variables
+    # Load environment variables from .env file
     load_dotenv()
     
     # Get configuration from environment
@@ -303,7 +303,7 @@ def main():
         if base_path:
             base_path = Path(base_path).resolve()
         else:
-            # Use current working directory (where script is run from)
+            # Use current working directory (where the user runs the script from)
             base_path = Path.cwd()
         
         print(f"Scanning folders in: {base_path}")
